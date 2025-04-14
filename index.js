@@ -212,7 +212,7 @@ async function handleOneTarget() {
 
   saveLastIds(lastIds);
   global.statusInfo.lastIds = lastIds;
-  global.statusInfo.lastRun = new Date();
+  global.statusInfo.lastRun = new Date().toISOString();
 }
 
 function startCountdown() {
