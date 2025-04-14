@@ -29,13 +29,14 @@ global.statusInfo = {
   currentTarget: null,
   lastRun: null,
   lastIds: {},
+  logs: [],
   errors: []
 };
 
 const BEARER_TOKEN = process.env.BEARER_TOKEN;
 const LAST_ID_FILE = './last_ids.json';
+const LOG_FILE = './log.log';
 const ERR_FILE = './error.log';
-
 const DISCORD_ENABLED = process.env.DISCORD_ENABLED === 'true';
 const DISCORD_TIME_GATE = process.env.DISCORD_TIME_GATE ? new Date(process.env.DISCORD_TIME_GATE).getTime() : null;
 if (isNaN(DISCORD_TIME_GATE)) {
@@ -85,6 +86,14 @@ function logError(error) {
   global.statusInfo.errors.push(errorMessage);
 }
 
+function logWarning(warning) {
+  const timestamp = new Date().toISOString();
+  const warningMessage = `[${timestamp}] ${warning}`;
+  console.warn(chalk.yellow(warningMessage));
+  fs.appendFileSync(LOG_FILE, warningMessage + '\n');
+  global.statusInfo.logs.push(warningMessage);  
+}
+
 async function getUserId(username) {
   const url = `https://api.twitter.com/2/users/by/username/${username}`;
   const res = await fetch(url, {
@@ -105,21 +114,21 @@ async function searchTweets(query, sinceId) {
   });
   const data = await res.json();
   if (data.status === 429) {
-    logError("❌ Rate limit exceeded. Waiting for 15 minutes.");
+    logError("Rate limit exceeded. Waiting for 15 minutes.");
   }
   return data?.data || [];
 }
 
 async function sendToDiscord(webhookUrl, tweet) {
   if (!DISCORD_ENABLED) {
-    logError('Discord webhook is disabled. Skipping sendToDiscord.');
+    logWarning('Discord webhook is disabled. Skipping sendToDiscord.');
     return;
   }
   if (DISCORD_TIME_GATE) {
     const tweetDate = new Date(tweet.created_at).getTime();
     const currentDate = new Date().getTime();
     if (tweetDate < DISCORD_TIME_GATE) {
-      logError(`Tweet ${tweet.id} is too old. Skipping.`);
+      logWarning(`Tweet ${tweet.id} is too old. Skipping.`);
       return;
     }
   }

@@ -26,9 +26,9 @@
   <h1>Status Dashboard</h1>
   <p><span class="label">Timer:</span> <span id="timer">Loading...</span></p>
   <p><span class="label">Last Run:</span> <span id="lastRun">Loading...</span></p>
-  <h2>Last Tweet IDs</h2>
-  <pre id="lastIds">Loading...</pre>
-  <h2>Error Logs</h2>
+  <h2>Logs</h2>
+  <pre id="logs">Loading...</pre>
+  <h2>Errors</h2>
   <pre id="errors">Loading...</pre>
 
   <script>
@@ -38,7 +38,7 @@
 
       document.getElementById('timer').textContent = `${Math.floor(data.timer / 60)}m ${data.timer % 60}s`;
       document.getElementById('lastRun').textContent = data.lastRun || 'N/A';
-      document.getElementById('lastIds').textContent = JSON.stringify(data.lastIds, null, 2);
+      document.getElementById('logs').textContent = data.logs.slice(-10).join('\n') || 'No logs.';
       document.getElementById('errors').textContent = data.errors.slice(-10).join('\n') || 'No errors.';
     }
 
