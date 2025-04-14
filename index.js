@@ -22,10 +22,12 @@ app.get('/api/status', (req, res) => {
 app.listen(port, () => {
   console.log(`🌐 Dashboard running at http://localhost:${port}`);
 });
+const REFRESH_RATE = process.env.REFRESH_RATE || 15 * 60;
 
 // Initialize status tracking
 global.statusInfo = {
   timer: 0,
+  timerMax: REFRESH_RATE,
   currentTarget: null,
   lastRun: null,
   lastIds: {},
@@ -79,7 +81,7 @@ function saveLastIds(data) {
 }
 
 function logError(error) {
-  const timestamp = new Date().toISOString();
+  const timestamp = getLocalDate();
   const errorMessage = `[${timestamp}] ${error}`;
   console.error(errorMessage);
   fs.appendFileSync(ERR_FILE, errorMessage + '\n');
@@ -87,7 +89,7 @@ function logError(error) {
 }
 
 function logInfo(info) {
-  const timestamp = new Date().toISOString();
+  const timestamp = getLocalDate();
   const infoMessage = `[${timestamp}] ${info}`;
   console.log(chalk.green(infoMessage));
   fs.appendFileSync(LOG_FILE, infoMessage + '\n');
@@ -95,7 +97,7 @@ function logInfo(info) {
 }
 
 function logWarning(warning) {
-  const timestamp = new Date().toISOString();
+  const timestamp = getLocalDate();
   const warningMessage = `[${timestamp}] ${warning}`;
   console.warn(chalk.yellow(warningMessage));
   fs.appendFileSync(LOG_FILE, warningMessage + '\n');
@@ -236,8 +238,10 @@ async function handleOneTarget() {
 
   saveLastIds(lastIds);
   global.statusInfo.lastIds = lastIds;
-  global.statusInfo.lastRun = new Date().toISOString();
+  global.statusInfo.lastRun = getLocalDate();
 }
+
+const getLocalDate = () => (new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }));
 
 function startCountdown() {
   const interval = setInterval(() => {
@@ -248,7 +252,7 @@ function startCountdown() {
       clearInterval(interval);
       console.log('\n⏱️ Running task...');
       handleOneTarget().catch(error => logError(error.message));
-      timer = 15 * 60;
+      timer = REFRESH_RATE;
       setTimeout(() => {
         startCountdown();
       }, 5000);

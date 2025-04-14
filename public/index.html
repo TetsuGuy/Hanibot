@@ -19,13 +19,22 @@
     }
     .label {
       color: #F3BF4B;
+      width: 100px;
+      flex: none;
+    }
+    #timer {
+      background: #B5C84A;
+      white-space: nowrap;
+    }
+    div + div {
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
   <h1>Status Dashboard</h1>
-  <p><span class="label">Timer:</span> <span id="timer">Loading...</span></p>
-  <p><span class="label">Last Run:</span> <span id="lastRun">Loading...</span></p>
+  <div style="display:inline-flex; width: 100%;"><label class="label">Timer:</label><div id="timer">Loading...</div></div>
+  <div style="display:inline-flex; width: 100%;"><label class="label">Last Run:</label> <span id="lastRun">Loading...</span></div>
   <h2>Logs</h2>
   <pre id="logs">Loading...</pre>
   <h2>Errors</h2>
@@ -36,7 +45,8 @@
       const res = await fetch('/api/status');
       const data = await res.json();
       document.getElementById('timer').textContent = `${Math.floor(data.timer / 60)}m ${data.timer % 60}s`;
-      document.getElementById('lastRun').textContent = new Date(data.lastRun).toLocaleString() || 'N/A';
+      document.getElementById('timer').style.width = (data.timer / data.timerMax) * 100 + '%';
+      document.getElementById('lastRun').textContent = data.lastRun || 'N/A';
       document.getElementById('logs').textContent = data.logs.slice(-10).join('\n') || 'No logs.';
       document.getElementById('errors').textContent = data.errors.slice(-10).join('\n') || 'No errors.';
     }
