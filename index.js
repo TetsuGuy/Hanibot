@@ -98,6 +98,9 @@ async function searchTweets(query, sinceId) {
     headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
   });
   const data = await res.json();
+  if (data.status === 429) {
+    logError("❌ Rate limit exceeded. Waiting for 15 minutes.");
+  }
   return data?.data || [];
 }
 
