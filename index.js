@@ -35,7 +35,12 @@ global.statusInfo = {
 const BEARER_TOKEN = process.env.BEARER_TOKEN;
 const LAST_ID_FILE = './last_ids.json';
 const ERR_FILE = './error.log';
+
 const DISCORD_ENABLED = process.env.DISCORD_ENABLED === 'true';
+const DISCORD_TIME_GATE = process.env.DISCORD_TIME_GATE ? new Date(process.env.DISCORD_TIME_GATE).getTime() : null;
+if (isNaN(DISCORD_TIME_GATE)) {
+  logError(`Invalid DISCORD_TIME_GATE format: ${process.env.DISCORD_TIME_GATE}`);
+}
 
 const queue = [
   { type: 'hashtags', value: Object.keys(config.hashtags) },
@@ -109,6 +114,14 @@ async function sendToDiscord(webhookUrl, tweet) {
   if (!DISCORD_ENABLED) {
     logError('Discord webhook is disabled. Skipping sendToDiscord.');
     return;
+  }
+  if (DISCORD_TIME_GATE) {
+    const tweetDate = new Date(tweet.created_at).getTime();
+    const currentDate = new Date().getTime();
+    if (tweetDate < DISCORD_TIME_GATE) {
+      logError(`Tweet from ${tweet.created_at} is older than time gate (${new Date(DISCORD_TIME_GATE).toISOString()}). Skipping.`);
+      return;
+    }
   }
   const content = `https://x.com/i/web/status/${tweet.id}`;
   await fetch(webhookUrl, {
