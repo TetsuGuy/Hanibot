@@ -141,6 +141,7 @@ async function sendToDiscord(webhookUrl, tweet) {
       return;
     }
   }
+  logInfo(`Sending tweet ${tweet.id} to Discord.`);
   const content = `https://x.com/i/web/status/${tweet.id}`;
   await fetch(webhookUrl, {
     method: 'POST',
