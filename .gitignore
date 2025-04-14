@@ -1,0 +1,4 @@
+/node_modules
+.env
+error.log
+last_ids.json

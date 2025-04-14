@@ -1,0 +1,1 @@
+This Node.js application connects Hani Hima's socials to the unofficial discord server.
