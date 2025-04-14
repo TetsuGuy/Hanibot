@@ -37,7 +37,7 @@
       const data = await res.json();
 
       document.getElementById('timer').textContent = `${Math.floor(data.timer / 60)}m ${data.timer % 60}s`;
-      document.getElementById('lastRun').textContent = data.lastRun.toLocalString() || 'N/A';
+      document.getElementById('lastRun').textContent = data.lastRun.toLocaleString() || 'N/A';
       document.getElementById('logs').textContent = data.logs.slice(-10).join('\n') || 'No logs.';
       document.getElementById('errors').textContent = data.errors.slice(-10).join('\n') || 'No errors.';
     }
