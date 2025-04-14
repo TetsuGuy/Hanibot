@@ -3,8 +3,34 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import config from './config.js';
 import chalk from 'chalk';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+// Setup Express dashboard
+const app = express();
+const port = process.env.PORT || 3000;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/api/status', (req, res) => {
+  res.json(global.statusInfo);
+});
+
+app.listen(port, () => {
+  console.log(`🌐 Dashboard running at http://localhost:${port}`);
+});
+
+// Initialize status tracking
+global.statusInfo = {
+  timer: 0,
+  currentTarget: null,
+  lastRun: null,
+  lastIds: {},
+  errors: []
+};
 
 const BEARER_TOKEN = process.env.BEARER_TOKEN;
 const LAST_ID_FILE = './last_ids.json';
@@ -33,7 +59,6 @@ if (args.length > 0) {
   }
 }
 
-
 function loadLastIds() {
   try {
     return JSON.parse(fs.readFileSync(LAST_ID_FILE));
@@ -49,8 +74,9 @@ function saveLastIds(data) {
 function logError(error) {
   const timestamp = new Date().toISOString();
   const errorMessage = `[${timestamp}] ${error}`;
-  console.error(chalk.red(errorMessage))
-  fs.appendFileSync(ERR_FILE, errorMessage);
+  console.error(errorMessage);
+  fs.appendFileSync(ERR_FILE, errorMessage + '\n');
+  global.statusInfo.errors.push(errorMessage);
 }
 
 async function getUserId(username) {
@@ -59,7 +85,6 @@ async function getUserId(username) {
     headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
   });
   const data = await res.json();
-  console.log("📦 Raw response:", JSON.stringify(data));
   return data?.data?.id;
 }
 
@@ -73,13 +98,6 @@ async function searchTweets(query, sinceId) {
     headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
   });
   const data = await res.json();
-  if (data.status === 429) {
-    console.log("❌ Rate limit exceeded. Waiting for 15 minutes.");
-  } else if(data.meta && data.meta.result_count === 0) {
-    console.log("❌ No new tweets found.");
-  } else {
-    console.log("📦 Raw response:", JSON.stringify(data, null, 2));
-  }
   return data?.data || [];
 }
 
@@ -95,6 +113,7 @@ async function sendToDiscord(webhookUrl, tweet) {
 async function handleOneTarget() {
   const lastIds = loadLastIds();
   const current = queue[index];
+  global.statusInfo.currentTarget = current;
   index = (index + 1) % queue.length;
 
   if (current.type === 'hashtags') {
@@ -105,7 +124,6 @@ async function handleOneTarget() {
     const tweets = await searchTweets(combinedQuery, sinceId);
 
     if (tweets.length > 0) {
-      // Distribute tweets into tag buckets
       const tagBuckets = {};
       for (const tag of allTags) tagBuckets[tag] = [];
 
@@ -118,24 +136,18 @@ async function handleOneTarget() {
         }
       }
 
-      // Send tweets per tag to respective Discord webhooks
       for (const tag of allTags) {
         const webhook = config.hashtags[tag];
         const taggedTweets = tagBuckets[tag];
         if (taggedTweets.length > 0) {
           for (const tweet of taggedTweets.reverse()) {
-            if (tweet.text.startsWith('RT ')) {
-              console.log(`❌ Skipping retweet: ${tweet.id}`);
-              continue;
-            }
+            if (tweet.text.startsWith('RT ')) continue;
             await sendToDiscord(webhook, tweet);
           }
         }
       }
 
       lastIds.hashtags.__combined = tweets[0].id;
-    } else {
-      console.log(`No new tweets for any hashtags`);
     }
 
   } else if (current.type === 'user') {
@@ -153,50 +165,27 @@ async function handleOneTarget() {
     if (tweets.length > 0) {
       lastIds.users[username] = tweets[0].id;
       for (const tweet of tweets.reverse()) {
-        console.log("Tweet:", tweet.text);
-        if (tweet.text.startsWith('RT ')) {
-          console.log(`❌ Skipping retweet: ${tweet.id}`);
-          continue;
-        }
+        if (tweet.text.startsWith('RT ')) continue;
         await sendToDiscord(webhook, tweet);
       }
-    } else {
-      console.log(`No new tweets from ${username}`);
     }
   }
 
   saveLastIds(lastIds);
+  global.statusInfo.lastIds = lastIds;
+  global.statusInfo.lastRun = new Date().toISOString();
 }
 
 function startCountdown() {
   const interval = setInterval(() => {
+    global.statusInfo.timer = timer;
     timer--;
-
-    const minutes = Math.floor(timer / 60);
-    const seconds = timer % 60;
-
-    const barLength = 30;
-    const progress = Math.floor((1 - timer / (15 * 60)) * barLength);
-
-    const filledBar = chalk.hex('#B5C84A')('█').repeat(progress);         // Pale green
-    const emptyBar = chalk.hex('#607F14')('░').repeat(barLength - progress); // Olive
-    const timeText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    const label = chalk.hex('#F3BF4B')('Next check in');
-
-    const bar = filledBar + emptyBar;
-
-    process.stdout.clearLine();
-    process.stdout.cursorTo(0);
-    process.stdout.write(`${label} ${timeText} [${bar}]`);
 
     if (timer <= 0) {
       clearInterval(interval);
-      console.log('\n');
-      handleOneTarget().catch(error => {
-        logError(error.message);
-      });
+      console.log('\n⏱️ Running task...');
+      handleOneTarget().catch(error => logError(error.message));
       timer = 15 * 60;
-      // Reset the countdown timer, gives 5 seconds delay to finish the current task
       setTimeout(() => {
         startCountdown();
       }, 5000);
