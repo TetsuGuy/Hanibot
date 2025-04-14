@@ -119,7 +119,7 @@ async function sendToDiscord(webhookUrl, tweet) {
     const tweetDate = new Date(tweet.created_at).getTime();
     const currentDate = new Date().getTime();
     if (tweetDate < DISCORD_TIME_GATE) {
-      logError(`Tweet from ${tweet.created_at} is older than time gate (${new Date(DISCORD_TIME_GATE).toISOString()}). Skipping.`);
+      logError(`Tweet ${tweet.id} is too old. Skipping.`);
       return;
     }
   }
@@ -194,7 +194,7 @@ async function handleOneTarget() {
 
   saveLastIds(lastIds);
   global.statusInfo.lastIds = lastIds;
-  global.statusInfo.lastRun = new Date().toISOString();
+  global.statusInfo.lastRun = new Date().toLocaleString();
 }
 
 function startCountdown() {

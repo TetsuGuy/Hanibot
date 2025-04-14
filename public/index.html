@@ -25,7 +25,6 @@
 <body>
   <h1>Status Dashboard</h1>
   <p><span class="label">Timer:</span> <span id="timer">Loading...</span></p>
-  <p><span class="label">Current Target:</span> <span id="target">Loading...</span></p>
   <p><span class="label">Last Run:</span> <span id="lastRun">Loading...</span></p>
   <h2>Last Tweet IDs</h2>
   <pre id="lastIds">Loading...</pre>
@@ -38,7 +37,6 @@
       const data = await res.json();
 
       document.getElementById('timer').textContent = `${Math.floor(data.timer / 60)}m ${data.timer % 60}s`;
-      document.getElementById('target').textContent = JSON.stringify(data.currentTarget, null, 2);
       document.getElementById('lastRun').textContent = data.lastRun || 'N/A';
       document.getElementById('lastIds').textContent = JSON.stringify(data.lastIds, null, 2);
       document.getElementById('errors').textContent = data.errors.slice(-10).join('\n') || 'No errors.';
