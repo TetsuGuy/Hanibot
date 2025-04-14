@@ -35,6 +35,7 @@ global.statusInfo = {
 const BEARER_TOKEN = process.env.BEARER_TOKEN;
 const LAST_ID_FILE = './last_ids.json';
 const ERR_FILE = './error.log';
+const DISCORD_ENABLED = process.env.DISCORD_ENABLED === 'true';
 
 const queue = [
   { type: 'hashtags', value: Object.keys(config.hashtags) },
@@ -105,6 +106,10 @@ async function searchTweets(query, sinceId) {
 }
 
 async function sendToDiscord(webhookUrl, tweet) {
+  if (!DISCORD_ENABLED) {
+    logError('Discord webhook is disabled. Skipping sendToDiscord.');
+    return;
+  }
   const content = `https://x.com/i/web/status/${tweet.id}`;
   await fetch(webhookUrl, {
     method: 'POST',
