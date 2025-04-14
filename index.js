@@ -129,6 +129,29 @@ async function searchTweets(query, sinceId) {
   return data?.data || [];
 }
 
+async function searchUserTweets(userId, sinceId) {
+  const url = new URL('https://api.twitter.com/2/tweets/search/recent');
+  // Include all tweets from the user, including replies, excluding retweets & quotes
+  url.searchParams.append('query', `from:${userId}`);
+  url.searchParams.append('tweet.fields', 'created_at,author_id,text');
+  url.searchParams.append('max_results', '100');
+  if (sinceId) url.searchParams.append('since_id', sinceId);
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
+  });
+
+  const data = await res.json();
+
+  if (data.status === 429) {
+    logError("Rate limit exceeded. Waiting for 15 minutes.");
+  } else {
+    logInfo(`Fetched ${data.meta?.result_count || 0} tweets from user ${userId}.`);
+  }
+
+  return data?.data || [];
+}
+
 async function sendToDiscord(webhookUrl, tweet) {
   if (!DISCORD_ENABLED) {
     logWarning('Discord webhook is disabled. Skipping sendToDiscord.');
@@ -200,7 +223,7 @@ async function handleOneTarget() {
     }
 
     const sinceId = lastIds.users[username];
-    const tweets = await searchTweets(`from:${userId}`, sinceId);
+    const tweets = await searchUserTweets(userId, sinceId);
 
     if (tweets.length > 0) {
       lastIds.users[username] = tweets[0].id;
