@@ -86,6 +86,14 @@ function logError(error) {
   global.statusInfo.errors.push(errorMessage);
 }
 
+function logInfo(info) {
+  const timestamp = new Date().toISOString();
+  const infoMessage = `[${timestamp}] ${info}`;
+  console.log(chalk.green(infoMessage));
+  fs.appendFileSync(LOG_FILE, infoMessage + '\n');
+  global.statusInfo.logs.push(infoMessage);
+}
+
 function logWarning(warning) {
   const timestamp = new Date().toISOString();
   const warningMessage = `[${timestamp}] ${warning}`;
@@ -115,6 +123,8 @@ async function searchTweets(query, sinceId) {
   const data = await res.json();
   if (data.status === 429) {
     logError("Rate limit exceeded. Waiting for 15 minutes.");
+  } else {
+    logInfo(`Fetched ${data.meta?.result_count || 0} tweets.`);
   }
   return data?.data || [];
 }
