@@ -136,7 +136,6 @@ async function sendToDiscord(webhookUrl, tweet) {
   }
   if (DISCORD_TIME_GATE) {
     const tweetDate = new Date(tweet.created_at).getTime();
-    const currentDate = new Date().getTime();
     if (tweetDate < DISCORD_TIME_GATE) {
       logWarning(`Tweet ${tweet.id} is too old. Skipping.`);
       return;
@@ -213,7 +212,7 @@ async function handleOneTarget() {
 
   saveLastIds(lastIds);
   global.statusInfo.lastIds = lastIds;
-  global.statusInfo.lastRun = new Date().toLocaleString();
+  global.statusInfo.lastRun = new Date();
 }
 
 function startCountdown() {
