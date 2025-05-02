@@ -19,9 +19,10 @@ app.get('/api/status', (req, res) => {
   res.json(global.statusInfo);
 });
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`🌐 Dashboard running at http://localhost:${port}`);
 });
+
 const REFRESH_RATE = process.env.REFRESH_RATE || 15 * 60;
 
 // Initialize status tracking
