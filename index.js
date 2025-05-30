@@ -44,7 +44,10 @@ function getBearerToken() {
   bearerTokenIndex = (bearerTokenIndex + 1) % BEARER_TOKENS.length;
   return token;
 }
-
+const twitterUserId = process.env.TWITTER_USER_ID;
+if (!twitterUserId) {
+   logError('Invalid or not provided: TWITTER USER ID');
+}
 const LAST_ID_FILE = './last_ids.json';
 const LOG_FILE = './log.log';
 const ERR_FILE = './error.log';
@@ -227,7 +230,7 @@ async function handleOneTarget() {
   } else if (current.type === 'user') {
     const username = current.value;
     const webhook = config.users[username];
-    const userId = await getUserId(username);
+    const userId = twitterUserId;
     if (!userId) {
       logError(`User ${username} not found`);
       return;
