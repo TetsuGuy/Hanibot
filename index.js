@@ -36,7 +36,15 @@ global.statusInfo = {
   errors: []
 };
 
-const BEARER_TOKEN = process.env.BEARER_TOKEN;
+const BEARER_TOKENS = process.env.BEARER_TOKEN ? process.env.BEARER_TOKENS.split(',').map(k => k.trim()).filter(Boolean) : [];
+let bearerTokenIndex = 0;
+function getBearerToken() {
+  if (BEARER_TOKENS.length === 0) return undefined;
+  const token = BEARER_TOKENS[bearerTokenIndex];
+  bearerTokenIndex = (bearerTokenIndex + 1) % BEARER_TOKENS.length;
+  return token;
+}
+
 const LAST_ID_FILE = './last_ids.json';
 const LOG_FILE = './log.log';
 const ERR_FILE = './error.log';
@@ -108,7 +116,7 @@ function logWarning(warning) {
 async function getUserId(username) {
   const url = `https://api.twitter.com/2/users/by/username/${username}`;
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
+    headers: { Authorization: `Bearer ${getBearerToken()}` }
   });
   const data = await res.json();
   return data?.data?.id;
@@ -121,7 +129,7 @@ async function searchTweets(query, sinceId) {
   url.searchParams.append('max_results', '100');
   if (sinceId) url.searchParams.append('since_id', sinceId);
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
+    headers: { Authorization: `Bearer ${getBearerToken()}` }
   });
   const data = await res.json();
   if (data.status === 429) {
@@ -141,7 +149,7 @@ async function searchUserTweets(userId, sinceId) {
   if (sinceId) url.searchParams.append('since_id', sinceId);
 
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
+    headers: { Authorization: `Bearer ${getBearerToken()}` }
   });
 
   const data = await res.json();
