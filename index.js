@@ -36,6 +36,8 @@ global.statusInfo = {
   errors: []
 };
 
+const getLocalDate = () => (new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }));
+
 const BEARER_TOKENS = process.env.BEARER_TOKEN ? process.env.BEARER_TOKENS.split(',').map(k => k.trim()).filter(Boolean) : [];
 let bearerTokenIndex = 0;
 function getBearerToken() {
@@ -262,7 +264,6 @@ async function handleOneTarget() {
   global.statusInfo.lastRun = getLocalDate();
 }
 
-const getLocalDate = () => (new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }));
 
 function startCountdown() {
   const interval = setInterval(() => {
