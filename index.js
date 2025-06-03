@@ -159,7 +159,7 @@ function inspectResponse(res, data) {
   if (String(res.status).startsWith('4')) {
     logError("Client Error 4XX");
     // unauthorized or usage cap hit
-    if (res.status === 401 || res.json().title === "UsageCapExceeded") {
+    if (res.status === 401 || data.title === "UsageCapExceeded") {
       logInfo("Getting new Bearer Token");
       bearerToken = getBearerToken();
     }
