@@ -46,9 +46,9 @@ function getBearerToken() {
 }
 let bearerToken = getBearerToken();
 
-const twitterUserId = process.env.TWITTER_USER_ID;
-if (!twitterUserId) {
-   logError('Invalid or not provided: TWITTER USER ID');
+const twitterUserName = process.env.TWITTER_USER_NAME;
+if (!twitterUserName) {
+   logError('Invalid or not provided: TWITTER USER NAME');
 }
 const LAST_ID_FILE = './last_ids.json';
 const LOG_FILE = './log.log';
@@ -145,10 +145,10 @@ async function searchTweets(query, sinceId) {
   return data?.data || [];
 }
 
-async function searchUserTweets(userId, sinceId) {
+async function searchUserTweets(userName, sinceId) {
   const url = new URL('https://api.twitter.com/2/tweets/search/recent');
   // Include all tweets from the user, including replies, excluding retweets & quotes
-  url.searchParams.append('query', `from:${userId}`);
+  url.searchParams.append('query', `from:${userName}`);
   url.searchParams.append('tweet.fields', 'created_at,author_id,text');
   url.searchParams.append('max_results', '100');
   if (sinceId) url.searchParams.append('since_id', sinceId);
@@ -166,7 +166,7 @@ async function searchUserTweets(userId, sinceId) {
     logInfo("Usage Cap Exceeded, using new Token.");
     bearerToken = getBearerToken();
   } else {
-    logInfo(`Fetched ${data.meta?.result_count || 0} tweets from user ${userId}.`);
+    logInfo(`Fetched ${data.meta?.result_count || 0} tweets from user ${userName}.`);
   }
 
   return data?.data || [];
@@ -236,14 +236,8 @@ async function handleOneTarget() {
   } else if (current.type === 'user') {
     const username = current.value;
     const webhook = config.users[username];
-    const userId = twitterUserId;
-    if (!userId) {
-      logError(`User ${username} not found`);
-      return;
-    }
-
     const sinceId = lastIds.users[username];
-    const tweets = await searchUserTweets(userId, sinceId);
+    const tweets = await searchUserTweets(twitterUserName, sinceId);
 
     if (tweets.length > 0) {
       lastIds.users[username] = tweets[0].id;
