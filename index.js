@@ -72,7 +72,7 @@ function logWarning(warning) {
 
 let bearerTokenIndex = 0;
 function getBearerToken() {
-  const BEARER_TOKENS = process.env.BEARER_TOKEN ? process.env.BEARER_TOKENS.split(',').map(k => k.trim()).filter(Boolean) : [];
+  const BEARER_TOKENS = process.env.BEARER_TOKENS ? process.env.BEARER_TOKENS.split(',').map(k => k.trim()).filter(Boolean) : [];
   if (BEARER_TOKENS.length === 0) {
     logError("Error getting new Bearer Token");
     return undefined;
