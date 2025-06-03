@@ -137,13 +137,27 @@ async function searchTweets(query, sinceId) {
     headers: { Authorization: `Bearer ${bearerToken}` }
   });
   const data = await res.json();
-  logInfo(`Response:${JSON.stringify(data)}`);
-  if (data.status === 429) {
-    logError("Rate limit exceeded. Waiting for 15 minutes.");
-  } else if(data.meta?.result_count) {
-    logInfo(`Fetched ${data.meta?.result_count} tweets.`);
-  }
+  inspectResponse(res);
   return data?.data || [];
+}
+
+function inspectResponse(res) {
+  logInfo(`Response:${JSON.stringify(res.json())}`);
+  // CLIENT ERRORS
+  if (String(res.status).startsWith('4')) {
+    logError("Client Error 4XX");
+    // unauthorized or usage cap hit
+    if (res.status === 401 || res.json().title === "UsageCapExceeded") {
+      logInfo("Getting new Bearer Token");
+      bearerToken = getBearerToken();
+    }
+    return;
+  }
+  // SERVER ERRORS
+  if (String(res.status).startsWith('4')) {
+    logError("Client Error 4XX");
+    return;
+  }
 }
 
 async function searchUserTweets(userName, sinceId) {
@@ -158,18 +172,8 @@ async function searchUserTweets(userName, sinceId) {
     headers: { Authorization: `Bearer ${bearerToken}` }
   });
 
-  const data = await res.json();
-  const isUsageCapExceeded = data.title === "UsageCapExceeded";
-  
-  if (res.status === 429 && !isUsageCapExceeded) {
-    logError("Rate limit exceeded. Waiting for 15 minutes.");
-  } else if(res.status === 429 && isUsageCapExceeded) {
-    logInfo("Usage Cap Exceeded, using new Token.");
-    bearerToken = getBearerToken();
-  } else {
-    logInfo(`Fetched ${data.meta?.result_count || 0} tweets from user ${userName}.`);
-  }
-
+  const data = await res.json(); 
+  handleResponseData(data);
   return data?.data || [];
 }
 
