@@ -137,7 +137,7 @@ async function searchTweets(query, sinceId) {
     headers: { Authorization: `Bearer ${bearerToken}` }
   });
   const data = await res.json();
-  logInfo(`Response:${res.json}`);
+  logInfo(`Response:${JSON.stringify(data)}`);
   if (data.status === 429) {
     logError("Rate limit exceeded. Waiting for 15 minutes.");
   } else if(data.meta?.result_count) {
