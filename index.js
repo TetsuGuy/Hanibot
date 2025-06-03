@@ -137,10 +137,11 @@ async function searchTweets(query, sinceId) {
     headers: { Authorization: `Bearer ${bearerToken}` }
   });
   const data = await res.json();
+  logInfo(`Response:${res.json}`);
   if (data.status === 429) {
     logError("Rate limit exceeded. Waiting for 15 minutes.");
-  } else {
-    logInfo(`Fetched ${data.meta?.result_count || 0} tweets.`);
+  } else if(data.meta?.result_count) {
+    logInfo(`Fetched ${data.meta?.result_count} tweets.`);
   }
   return data?.data || [];
 }
