@@ -31,9 +31,28 @@
     #timer {
       background: #B5C84A;
       white-space: nowrap;
+      display: inline-block;
+      height: 1.5em;
+      min-width: 3em;
+      width: 0;
+      transition: width linear;
     }
     div + div {
       margin-top: 1rem;
+    }
+    #downloadZipBtn {
+      margin: 1rem 0;
+      padding: 0.5rem 1rem;
+      background: #B5C84A;
+      color: #1c1c1e;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #downloadZipBtn:disabled {
+      background: #888;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -41,23 +60,68 @@
   <h1>Status Dashboard</h1>
   <div style="display:inline-flex; width: 100%;"><label class="label">Timer:</label><div id="timer">Loading...</div></div>
   <div style="display:inline-flex; width: 100%;"><label class="label">Last Run:</label> <span id="lastRun">Loading...</span></div>
+  <button id="downloadZipBtn" disabled>Download Logs &amp; Errors (ZIP)</button>
   <h2>Logs</h2>
   <pre id="logs">Loading...</pre>
   <h2>Errors</h2>
   <pre id="errors">Loading...</pre>
 
   <script>
+    // Minimal JSZip loader (CDN)
+    function loadJSZip(cb) {
+      if (window.JSZip) return cb();
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+      script.onload = cb;
+      document.head.appendChild(script);
+    }
+
+    let latestLogs = [];
+    let latestErrors = [];
+
+    function startTimerBar(durationSeconds) {
+      const timerBar = document.getElementById('timer');
+      timerBar.style.transition = 'none';
+      timerBar.style.width = '100%';
+      setTimeout(() => {
+        timerBar.style.transition = `width ${durationSeconds}s linear`;
+        timerBar.style.width = '0%';
+      }, 50);
+    }
+
     async function fetchStatus() {
       const res = await fetch('/api/status');
       const data = await res.json();
       document.getElementById('timer').textContent = `${Math.floor(data.timer / 60)}m ${data.timer % 60}s`;
-      document.getElementById('timer').style.width = (data.timer / data.timerMax) * 100 + '%';
       document.getElementById('lastRun').textContent = data.lastRun || 'N/A';
       document.getElementById('logs').textContent = data.logs.slice(-10).join('\n') || 'No logs.';
       document.getElementById('errors').textContent = data.errors.slice(-10).join('\n') || 'No errors.';
+      latestLogs = data.logs;
+      latestErrors = data.errors;
+      document.getElementById('downloadZipBtn').disabled = false;
+      startTimerBar(900);
     }
 
-    setInterval(fetchStatus, 3000);
+    document.getElementById('downloadZipBtn').addEventListener('click', function() {
+      loadJSZip(function() {
+        const zip = new JSZip();
+        zip.file('logs.txt', (latestLogs && latestLogs.length) ? latestLogs.join('\n') : 'No logs.');
+        zip.file('errors.txt', (latestErrors && latestErrors.length) ? latestErrors.join('\n') : 'No errors.');
+        zip.generateAsync({type:"blob"}).then(function(content) {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(content);
+          a.download = 'dashboard_logs.zip';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+        });
+      });
+    });
+
+    setInterval(fetchStatus, 10*60*1000);
     fetchStatus();
   </script>
 </body>
