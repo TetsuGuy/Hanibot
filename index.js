@@ -173,7 +173,7 @@ async function searchUserTweets(userName, sinceId) {
   });
 
   const data = await res.json(); 
-  handleResponseData(data);
+  inspectResponse(res);
   return data?.data || [];
 }
 
