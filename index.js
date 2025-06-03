@@ -44,6 +44,8 @@ function getBearerToken() {
   bearerTokenIndex = (bearerTokenIndex + 1) % BEARER_TOKENS.length;
   return token;
 }
+let bearerToken = getBearerToken();
+
 const twitterUserId = process.env.TWITTER_USER_ID;
 if (!twitterUserId) {
    logError('Invalid or not provided: TWITTER USER ID');
@@ -119,7 +121,7 @@ function logWarning(warning) {
 async function getUserId(username) {
   const url = `https://api.twitter.com/2/users/by/username/${username}`;
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${getBearerToken()}` }
+    headers: { Authorization: `Bearer ${bearerToken}` }
   });
   const data = await res.json();
   return data?.data?.id;
@@ -132,7 +134,7 @@ async function searchTweets(query, sinceId) {
   url.searchParams.append('max_results', '100');
   if (sinceId) url.searchParams.append('since_id', sinceId);
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${getBearerToken()}` }
+    headers: { Authorization: `Bearer ${bearerToken}` }
   });
   const data = await res.json();
   if (data.status === 429) {
@@ -152,13 +154,17 @@ async function searchUserTweets(userId, sinceId) {
   if (sinceId) url.searchParams.append('since_id', sinceId);
 
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${getBearerToken()}` }
+    headers: { Authorization: `Bearer ${bearerToken}` }
   });
 
   const data = await res.json();
-
-  if (data.status === 429) {
+  const isUsageCapExceeded = data.title === "UsageCapExceeded";
+  
+  if (res.status === 429 && !isUsageCapExceeded) {
     logError("Rate limit exceeded. Waiting for 15 minutes.");
+  } else if(res.status === 429 && isUsageCapExceeded) {
+    logInfo("Usage Cap Exceeded, using new Token.");
+    bearerToken = getBearerToken();
   } else {
     logInfo(`Fetched ${data.meta?.result_count || 0} tweets from user ${userId}.`);
   }
