@@ -38,9 +38,33 @@ global.statusInfo = {
 
 const getLocalDate = () => (new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }));
 
-const BEARER_TOKENS = process.env.BEARER_TOKEN ? process.env.BEARER_TOKENS.split(',').map(k => k.trim()).filter(Boolean) : [];
+function logError(error) {
+  const timestamp = getLocalDate();
+  const errorMessage = `[${timestamp}] ${error}`;
+  console.error(errorMessage);
+  fs.appendFileSync(ERR_FILE, errorMessage + '\n');
+  global.statusInfo.errors.push(errorMessage);
+}
+
+function logInfo(info) {
+  const timestamp = getLocalDate();
+  const infoMessage = `[${timestamp}] ${info}`;
+  console.log(chalk.green(infoMessage));
+  fs.appendFileSync(LOG_FILE, infoMessage + '\n');
+  global.statusInfo.logs.push(infoMessage);
+}
+
+function logWarning(warning) {
+  const timestamp = getLocalDate();
+  const warningMessage = `[${timestamp}] ${warning}`;
+  console.warn(chalk.yellow(warningMessage));
+  fs.appendFileSync(LOG_FILE, warningMessage + '\n');
+  global.statusInfo.logs.push(warningMessage);  
+}
+
 let bearerTokenIndex = 0;
 function getBearerToken() {
+  const BEARER_TOKENS = process.env.BEARER_TOKEN ? process.env.BEARER_TOKENS.split(',').map(k => k.trim()).filter(Boolean) : [];
   if (BEARER_TOKENS.length === 0) {
     logError("Error getting new Bearer Token");
     return undefined;
@@ -100,29 +124,7 @@ function saveLastIds(data) {
   fs.writeFileSync(LAST_ID_FILE, JSON.stringify(data, null, 2));
 }
 
-function logError(error) {
-  const timestamp = getLocalDate();
-  const errorMessage = `[${timestamp}] ${error}`;
-  console.error(errorMessage);
-  fs.appendFileSync(ERR_FILE, errorMessage + '\n');
-  global.statusInfo.errors.push(errorMessage);
-}
 
-function logInfo(info) {
-  const timestamp = getLocalDate();
-  const infoMessage = `[${timestamp}] ${info}`;
-  console.log(chalk.green(infoMessage));
-  fs.appendFileSync(LOG_FILE, infoMessage + '\n');
-  global.statusInfo.logs.push(infoMessage);
-}
-
-function logWarning(warning) {
-  const timestamp = getLocalDate();
-  const warningMessage = `[${timestamp}] ${warning}`;
-  console.warn(chalk.yellow(warningMessage));
-  fs.appendFileSync(LOG_FILE, warningMessage + '\n');
-  global.statusInfo.logs.push(warningMessage);  
-}
 
 async function getUserId(username) {
   const url = `https://api.twitter.com/2/users/by/username/${username}`;
