@@ -137,12 +137,12 @@ async function searchTweets(query, sinceId) {
     headers: { Authorization: `Bearer ${bearerToken}` }
   });
   const data = await res.json();
-  inspectResponse(res);
+  inspectResponse(res, data);
   return data?.data || [];
 }
 
-function inspectResponse(res) {
-  logInfo(`Response:${JSON.stringify(res.json())}`);
+function inspectResponse(res, data) {
+  logInfo(`Response:${JSON.stringify(data)}`);
   // CLIENT ERRORS
   if (String(res.status).startsWith('4')) {
     logError("Client Error 4XX");
@@ -173,7 +173,7 @@ async function searchUserTweets(userName, sinceId) {
   });
 
   const data = await res.json(); 
-  inspectResponse(res);
+  inspectResponse(res, data);
   return data?.data || [];
 }
 
