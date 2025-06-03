@@ -39,9 +39,13 @@ global.statusInfo = {
 const BEARER_TOKENS = process.env.BEARER_TOKEN ? process.env.BEARER_TOKENS.split(',').map(k => k.trim()).filter(Boolean) : [];
 let bearerTokenIndex = 0;
 function getBearerToken() {
-  if (BEARER_TOKENS.length === 0) return undefined;
+  if (BEARER_TOKENS.length === 0) {
+    logError("Error getting new Bearer Token");
+    return undefined;
+  }
   const token = BEARER_TOKENS[bearerTokenIndex];
   bearerTokenIndex = (bearerTokenIndex + 1) % BEARER_TOKENS.length;
+  logInfo(`New BearerToken Index:${bearerTokenIndex}`);
   return token;
 }
 let bearerToken = getBearerToken();
