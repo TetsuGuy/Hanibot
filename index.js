@@ -18,7 +18,7 @@ const LAST_ID_FILE = './last_ids.json';
 const LOG_FILE = './log.log';
 const ERR_FILE = './error.log';
 const DISCORD_ENABLED = process.env.DISCORD_ENABLED === 'true';
-const DISCORD_TIME_GATE = process.env.DISCORD_TIME_GATE ? new Date(process.env.DISCORD_TIME_GATE).getTime() : null;
+const DISCORD_TIME_GATE = process.env.DISCORD_TIME_GATE ? new Date(process.env.DISCORD_TIME_GATE).getTime() : new Date().getTime();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, 'public')));
